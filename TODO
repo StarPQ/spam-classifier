@@ -1,7 +1,0 @@
-labelIndexer
-word2Vec
- val layers = Array[Int](VECTOR_SIZE,6,5,2)
-  val mlpc = new MultilayerPerceptronClassifier() 
- val labelConverter = new IndexToString()
-  val Array(trainingData, testData) = msgDF.randomSplit(Array(0.8, 0.2))
-  Pipeline

@@ -64,25 +64,36 @@ trainingData = msgDF
 pipeline = Pipeline(stages=[indexer, word2Vec, trainer, labelConverter])
 model = pipeline.fit(trainingData)
 
-source_dir = '/home/hadoop/Bigdata/project/resource/'
-target_dir = '/home/hadoop/Bigdata/project/result/'
-Output = open(target_dir + 'result', 'w+')
-for root, sub_dirs, files in os.walk(source_dir):  
-    for file in files:
-        pData = sc.textFile(source_dir + file)
-        pData = pData.map(lambda x: deal(x))
-        pDF = sqlCtx.createDataFrame(data, ["label", "message"])
-        pRES = model.transform(pDF)
-        pRES.printSchema();
-        pRES = pRES.filter(pRES.label=='2')
-        pRES.select("message", "label", "predictedlabel").show(30)
+source = '/home/hadoop/Bigdata/project/resource.txt'
+# Output = open(target_dir + 'result', 'w+')
+# source_dir = '/home/hadoop/Bigdata/project/resource/'
+# target_dir = '/home/hadoop/Bigdata/project/result/'
+Output = open('/home/hadoop/Bigdata/project/result.txt', 'w+')
+pData = sc.textFile(source)
+pData = pData.map(lambda x: deal(x))
+pDF = sqlCtx.createDataFrame(pData, ["label", "message"])
+pRES = model.transform(pDF)
+res = pRES.select("predictedlabel").collect()
+for num in res:
+    Output.write(str(num) + '\n')
+# for root, sub_dirs, files in os.walk(source_dir):  
+#     for file in files:
+#         pData = sc.textFile(source_dir + file)
+#         pData = pData.map(lambda x: deal(x))
+#         pDF = sqlCtx.createDataFrame(pData, ["label", "message"])
+#         pRES = model.transform(pDF)
+        # pRES.printSchema()
+        # pRES = pRES.filter(pRES.label=='2')
+        # pRES.select("message", "label", "predictedlabel").show(30)
         # pRES.select("predictedlabel").show(33363)
         # pRES.select("predictedlabel").write.format('json').save("res", format="json", savemode='append')
         
         # target = open(target_dir + file, 'w+')
         # pRES = pRES.filter(pRES.label=='2')
-        # res = pRES.rdd.map(lambda x: x.message).collect()
-        
+        # res = pRES.rdd.map(lambda x: x.predictedlabel).collect()
+
+        # res = pRES.select("predictedlabel").collect()
+
         # asdf = pRES.rdd.map(lambda x: x.message).collect()
         # for a in asdf:
         #     for b in a:
@@ -93,8 +104,8 @@ for root, sub_dirs, files in os.walk(source_dir):
         #     Output.write('\n', encode='utf-8')
 
         # for num in res:
-        #     target.write(num.tostr() + '\n')
-        #     Output.write(num.tostr() + '\n')
+        #     target.write(str(num) + '\n')
+        #     Output.write(str(num) + '\n')
 
 # ResultDF = model.transform(testData)
 # ResultDF.printSchema 
