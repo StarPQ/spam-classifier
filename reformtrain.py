@@ -19,7 +19,10 @@ try:
             # data[file[:3]] = tmp
             # p = json.dumps(data)
             # target_file.write(p+'\r')
-            data[tmp] = file[:3]
+            if file[:3]=="ham":
+                data[tmp] = '0'
+            else:
+                data[tmp] = '1'
             # for line in source:
             #target_file.write(line,)
             # break	

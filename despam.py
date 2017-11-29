@@ -9,6 +9,7 @@ from pyspark.sql import DataFrameReader
 from pyspark import SparkContext
 from pyspark import SparkConf
 from pyspark import rdd
+import numpy as np
 import os
 
 VECTOR_SIZE = 100
@@ -24,10 +25,11 @@ data = sc.textFile('/home/hadoop/Bigdata/project/trainsort')
 data = data.map(lambda x: deal(x))
 # data = data.map(lambda x: x[1].split(' '))
 sqlCtx = SQLContext(sc)
-print "---------------------------------------"
-print data.first()
-print "---------------------------------------"
-msgDF = sqlCtx.createDataFrame(data, ["label","message"])
+
+# print "---------------------------------------"
+# print data.first()
+# print "---------------------------------------"
+msgDF = sqlCtx.createDataFrame(data, ["label", "message"])
 #print msgDF.collect()
 # dfr = DataFrameReader()
 # msgDF = dfr.json('/home/hadoop/Bigdata/project/trainsort')
@@ -52,18 +54,52 @@ word2Vec = Word2Vec(vectorSize=VECTOR_SIZE, minCount=1, inputCol="message", outp
 #     print("Text: [%s] => \nVector: %s\n" % (", ".join(text), str(vector)))
 
 layers = [VECTOR_SIZE, 6, 5, 2]
-trainer = MultilayerPerceptronClassifier(maxIter=128, layers=layers, blockSize=512, seed=1234L, featuresCol="features", labelCol="indexed", predictionCol="prediction")
+trainer = MultilayerPerceptronClassifier(maxIter=256, layers=layers, blockSize=512, seed=1234L, featuresCol="features", labelCol="indexed", predictionCol="prediction")
 
 labelConverter = IndexToString(inputCol="prediction", outputCol="predictedlabel", labels=indexer.labels)
 
-trainingData, testData = msgDF.randomSplit([8.0, 2.0], 24)
+# trainingData, testData = msgDF.randomSplit([8.0, 2.0], 24)
+trainingData = msgDF
 
 pipeline = Pipeline(stages=[indexer, word2Vec, trainer, labelConverter])
 model = pipeline.fit(trainingData)
-ResultDF = model.transform(testData)
-ResultDF.printSchema 
-ResultDF.select("message","label","predictedlabel").show(30)
+
+source_dir = '/home/hadoop/Bigdata/project/resource/'
+target_dir = '/home/hadoop/Bigdata/project/result/'
+Output = open(target_dir + 'result', 'w+')
+for root, sub_dirs, files in os.walk(source_dir):  
+    for file in files:
+        pData = sc.textFile(source_dir + file)
+        pData = pData.map(lambda x: deal(x))
+        pDF = sqlCtx.createDataFrame(data, ["label", "message"])
+        pRES = model.transform(pDF)
+        pRES.printSchema();
+        pRES = pRES.filter(pRES.label=='2')
+        pRES.select("message", "label", "predictedlabel").show(30)
+        # pRES.select("predictedlabel").show(33363)
+        # pRES.select("predictedlabel").write.format('json').save("res", format="json", savemode='append')
+        
+        # target = open(target_dir + file, 'w+')
+        # pRES = pRES.filter(pRES.label=='2')
+        # res = pRES.rdd.map(lambda x: x.message).collect()
+        
+        # asdf = pRES.rdd.map(lambda x: x.message).collect()
+        # for a in asdf:
+        #     for b in a:
+        #         target.write(b)
+        #         Output.write(b)
+            
+        #     target.write('\n', encode='utf-8')
+        #     Output.write('\n', encode='utf-8')
+
+        # for num in res:
+        #     target.write(num.tostr() + '\n')
+        #     Output.write(num.tostr() + '\n')
+
+# ResultDF = model.transform(testData)
+# ResultDF.printSchema 
+# ResultDF.select("message","label","predictedlabel").show(30)
  
-evaluator = MulticlassClassificationEvaluator(labelCol="indexed", predictionCol="prediction", metricName="accuracy")
-accuracy = evaluator.evaluate(ResultDF)
-print accuracy
+# evaluator = MulticlassClassificationEvaluator(labelCol="indexed", predictionCol="prediction", metricName="accuracy")
+# accuracy = evaluator.evaluate(ResultDF)
+# print accuracy
