@@ -54,7 +54,7 @@ word2Vec = Word2Vec(vectorSize=VECTOR_SIZE, minCount=1, inputCol="message", outp
 #     print("Text: [%s] => \nVector: %s\n" % (", ".join(text), str(vector)))
 
 layers = [VECTOR_SIZE, 6, 5, 2]
-trainer = MultilayerPerceptronClassifier(maxIter=256, layers=layers, blockSize=512, seed=1234L, featuresCol="features", labelCol="indexed", predictionCol="prediction")
+trainer = MultilayerPerceptronClassifier(maxIter=10240, layers=layers, blockSize=512, seed=1234L, featuresCol="features", labelCol="indexed", predictionCol="prediction")
 
 labelConverter = IndexToString(inputCol="prediction", outputCol="predictedlabel", labels=indexer.labels)
 
